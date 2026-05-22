@@ -9,6 +9,7 @@ import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { formatDate, formatDateTime, formatRelativeTime } from '@/lib/utils'
 import { usePatientById, usePatientMedicalNotes, usePatientVisits } from '../hooks/use-patients-queries'
 import { getAppointments } from '@/features/appointments'
 import { PatientProfileHeader } from './patient-profile-header'
@@ -126,10 +127,10 @@ export function PatientProfilePage() {
               <div className='rounded-lg border p-6'>
                 <h3 className='mb-4 font-semibold'>Personal Information</h3>
                 <dl className='space-y-3 text-sm'>
-                  <div className='flex justify-between'>
-                    <dt className='text-muted-foreground'>Date of Birth</dt>
-                    <dd>{patient.dateOfBirth}</dd>
-                  </div>
+                   <div className='flex justify-between'>
+                     <dt className='text-muted-foreground'>Date of Birth</dt>
+                     <dd className='font-medium'>{formatDate(patient.dateOfBirth)}</dd>
+                   </div>
                   <div className='flex justify-between'>
                     <dt className='text-muted-foreground'>Gender</dt>
                     <dd className='capitalize'>{patient.gender}</dd>
@@ -182,22 +183,37 @@ export function PatientProfilePage() {
               </div>
 
               <div className='rounded-lg border p-6'>
-                <h3 className='mb-4 font-semibold'>Record Timeline</h3>
-                <dl className='space-y-3 text-sm'>
-                  <div className='flex justify-between'>
-                    <dt className='text-muted-foreground'>Created</dt>
-                    <dd>{patient.createdAt}</dd>
-                  </div>
-                  <div className='flex justify-between'>
-                    <dt className='text-muted-foreground'>Last Updated</dt>
-                    <dd>{patient.updatedAt}</dd>
-                  </div>
-                  <div className='flex justify-between'>
-                    <dt className='text-muted-foreground'>Last Visit</dt>
-                    <dd>{patient.lastVisit}</dd>
-                  </div>
-                </dl>
-              </div>
+                 <h3 className='mb-4 font-semibold'>Record Timeline</h3>
+                 <dl className='space-y-4 text-sm'>
+                   <div className='flex justify-between items-start'>
+                     <dt className='text-muted-foreground'>Created</dt>
+                     <dd className='text-end'>
+                       <div className='font-medium'>{formatDateTime(patient.createdAt)}</div>
+                       <div className='text-xs text-muted-foreground'>{formatRelativeTime(patient.createdAt)}</div>
+                     </dd>
+                   </div>
+                   <div className='flex justify-between items-start'>
+                     <dt className='text-muted-foreground'>Last Updated</dt>
+                     <dd className='text-end'>
+                       <div className='font-medium'>{formatDateTime(patient.updatedAt)}</div>
+                       <div className='text-xs text-muted-foreground'>{formatRelativeTime(patient.updatedAt)}</div>
+                     </dd>
+                   </div>
+                   <div className='flex justify-between items-start'>
+                     <dt className='text-muted-foreground'>Last Visit</dt>
+                     <dd className='text-end'>
+                       {patient.lastVisit ? (
+                         <>
+                           <div className='font-medium'>{formatDate(patient.lastVisit)}</div>
+                           <div className='text-xs text-muted-foreground'>{formatRelativeTime(patient.lastVisit)}</div>
+                         </>
+                       ) : (
+                         <span className='text-muted-foreground'>—</span>
+                       )}
+                     </dd>
+                   </div>
+                 </dl>
+               </div>
             </div>
           </TabsContent>
         </Tabs>

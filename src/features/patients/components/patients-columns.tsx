@@ -1,5 +1,5 @@
 import { type ColumnDef } from '@tanstack/react-table'
-import { cn } from '@/lib/utils'
+import { cn, formatDate, formatRelativeTime } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { DataTableColumnHeader } from '@/components/data-table'
@@ -138,13 +138,22 @@ export const patientsColumns: ColumnDef<Patient>[] = [
     },
     enableSorting: false,
   },
-  {
-    accessorKey: 'lastVisit',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='Last Visit' />
-    ),
-    cell: ({ row }) => <div>{row.getValue('lastVisit')}</div>,
-  },
+   {
+     accessorKey: 'lastVisit',
+     header: ({ column }) => (
+       <DataTableColumnHeader column={column} title='Last Visit' />
+     ),
+     cell: ({ row }) => {
+       const lastVisit = row.getValue('lastVisit') as string
+       if (!lastVisit) return <span className='text-muted-foreground'>—</span>
+       return (
+         <div className='flex flex-col'>
+           <span className='font-medium'>{formatRelativeTime(lastVisit)}</span>
+           <span className='text-xs text-muted-foreground'>{formatDate(lastVisit)}</span>
+         </div>
+       )
+     },
+   },
   {
     id: 'actions',
     cell: DataTableRowActions,

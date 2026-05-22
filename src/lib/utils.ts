@@ -73,3 +73,56 @@ export function getDisplayNameInitials(displayName: string): string {
   const last = parts[parts.length - 1]?.[0] ?? ''
   return (first + last).toUpperCase()
 }
+
+export function formatDate(dateStr: string | Date): string {
+  try {
+    const date = typeof dateStr === 'string' ? new Date(dateStr) : dateStr
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    })
+  } catch {
+    return String(dateStr)
+  }
+}
+
+export function formatDateTime(dateStr: string | Date): string {
+  try {
+    const date = typeof dateStr === 'string' ? new Date(dateStr) : dateStr
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    })
+  } catch {
+    return String(dateStr)
+  }
+}
+
+export function formatRelativeTime(dateStr: string | Date): string {
+  try {
+    const date = typeof dateStr === 'string' ? new Date(dateStr) : dateStr
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffSecs = Math.floor(diffMs / 1000)
+    const diffMins = Math.floor(diffSecs / 60)
+    const diffHours = Math.floor(diffMins / 60)
+    const diffDays = Math.floor(diffHours / 24)
+    const diffWeeks = Math.floor(diffDays / 7)
+    const diffMonths = Math.floor(diffDays / 30)
+    const diffYears = Math.floor(diffDays / 365)
+
+    if (diffSecs < 60) return 'Just now'
+    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`
+    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`
+    if (diffWeeks < 4) return `${diffWeeks} week${diffWeeks > 1 ? 's' : ''} ago`
+    if (diffMonths < 12) return `${diffMonths} month${diffMonths > 1 ? 's' : ''} ago`
+    return `${diffYears} year${diffYears > 1 ? 's' : ''} ago`
+  } catch {
+    return formatDate(dateStr)
+  }
+}
