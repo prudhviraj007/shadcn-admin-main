@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { X } from 'lucide-react'
-import { showSubmittedData } from '@/lib/show-submitted-data'
+import { X, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -13,6 +12,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { patientTags } from '../data/data'
+import { usePatientMutations } from '../hooks/use-patients-queries'
 import { type Patient } from '../data/schema'
 
 type PatientsTagsDialogProps = {
@@ -29,6 +29,8 @@ export function PatientsTagsDialog({
   const [selectedTags, setSelectedTags] = useState<string[]>(
     currentRow.tags ?? []
   )
+  const { updateEntity } = usePatientMutations()
+  const [isSaving, setIsSaving] = useState(false)
 
   const toggleTag = (tagValue: string) => {
     setSelectedTags((prev) =>
@@ -38,9 +40,17 @@ export function PatientsTagsDialog({
     )
   }
 
-  const handleSave = () => {
-    showSubmittedData({ patientId: currentRow.id, tags: selectedTags })
-    onOpenChange(false)
+  const handleSave = async () => {
+    setIsSaving(true)
+    try {
+      await updateEntity.mutateAsync({
+        ...currentRow,
+        tags: selectedTags,
+      })
+      onOpenChange(false)
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
@@ -101,10 +111,23 @@ export function PatientsTagsDialog({
         </ScrollArea>
 
         <DialogFooter className='gap-y-2'>
-          <Button variant='outline' onClick={() => onOpenChange(false)}>
+          <Button
+            variant='outline'
+            onClick={() => onOpenChange(false)}
+            disabled={isSaving}
+          >
             Cancel
           </Button>
-          <Button onClick={handleSave}>Save Tags</Button>
+          <Button onClick={handleSave} disabled={isSaving} className='gap-2'>
+            {isSaving ? (
+              <>
+                <Loader2 className='size-4 animate-spin' />
+                Saving...
+              </>
+            ) : (
+              'Save Tags'
+            )}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
