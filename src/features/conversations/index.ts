@@ -1,0 +1,8 @@
+export { ConversationsPage } from './components/conversations-page'
+export { useFilteredConversations } from './hooks'
+export { mockConversations } from './mock-data'
+export { getConversations } from './services'
+export { useConversationsStore } from './store'
+export { conversations } from './data/conversations'
+export { statusLabels, statusColors, priorityLabels, priorityColors, statusFilters } from './data/data'
+export type { Conversation, ConversationStatus, Message, MessageAuthor, Priority } from './types'
