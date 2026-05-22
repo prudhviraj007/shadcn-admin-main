@@ -3,6 +3,7 @@
   "private": false,
   "version": "2.2.1",
   "type": "module",
+  "author": "Prudhviraj <prudhviraj3007.pr@gmail.com>",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
