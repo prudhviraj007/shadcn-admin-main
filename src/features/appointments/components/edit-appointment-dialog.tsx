@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { CalendarClock, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useDoctorsList } from '@/features/doctors'
 import {
   Dialog,
   DialogContent,
@@ -56,22 +57,6 @@ const appointmentTypes = [
   'Specialist Visit',
 ] as const
 
-const doctors = [
-  'Dr. Aisha Rao',
-  'Dr. Daniel Kim',
-  'Dr. Priya Shah',
-  'Dr. Marcus Chen',
-  'Dr. Elena Torres',
-] as const
-
-const doctorSpecialties: Record<string, string> = {
-  'Dr. Aisha Rao': 'Primary Care',
-  'Dr. Daniel Kim': 'Cardiology',
-  'Dr. Priya Shah': 'Family Medicine',
-  'Dr. Marcus Chen': 'Dermatology',
-  'Dr. Elena Torres': 'Pediatrics',
-}
-
 const editAppointmentSchema = z.object({
   patientName: z
     .string()
@@ -110,6 +95,20 @@ export function EditAppointmentDialog({
   onSave,
 }: EditAppointmentDialogProps) {
   const [isSaving, setIsSaving] = useState(false)
+  const { data: doctorsData = [], isLoading: isLoadingDoctors } = useDoctorsList()
+
+  const doctorNames = useMemo(() => {
+    return doctorsData.map((d) => d.name)
+  }, [doctorsData])
+
+  const doctorSpecialties: Record<string, string> = useMemo(() => {
+    const map: Record<string, string> = {}
+    doctorsData.forEach((d) => {
+      map[d.name] = d.specialty
+    })
+    return map
+  }, [doctorsData])
+
   const form = useForm<EditAppointmentFormValues>({
     resolver: zodResolver(editAppointmentSchema),
     defaultValues: getFormValues(appointment),
@@ -197,24 +196,24 @@ export function EditAppointmentDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Doctor</FormLabel>
-                    <Select
-                      value={field.value}
-                      onValueChange={field.onChange}
-                      disabled={isSaving}
-                    >
-                      <FormControl>
-                        <SelectTrigger className='w-full'>
-                          <SelectValue placeholder='Select doctor' />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {doctors.map((doctor) => (
-                          <SelectItem key={doctor} value={doctor}>
-                            {doctor}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                     <Select
+                       value={field.value}
+                       onValueChange={field.onChange}
+                       disabled={isSaving || isLoadingDoctors}
+                     >
+                       <FormControl>
+                         <SelectTrigger className='w-full'>
+                           <SelectValue placeholder={isLoadingDoctors ? 'Loading doctors...' : 'Select doctor'} />
+                         </SelectTrigger>
+                       </FormControl>
+                       <SelectContent>
+                         {doctorNames.map((doctor) => (
+                           <SelectItem key={doctor} value={doctor}>
+                             {doctor}
+                           </SelectItem>
+                         ))}
+                       </SelectContent>
+                     </Select>
                     <FormMessage />
                   </FormItem>
                 )}
