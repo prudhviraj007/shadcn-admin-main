@@ -1,17 +1,17 @@
-import { useNavigate } from '@tanstack/react-router'
 import { useClerk } from '@clerk/react'
 import { useAuthStore } from '@/stores/auth-store'
+import { useAuth } from '@/hooks/use-auth'
 import { ConfirmDialog } from '@/components/confirm-dialog'
+import { hasClerk, hasSupabase } from '@/lib/env'
 
 interface SignOutDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
-const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
-
 export function SignOutDialog({ open, onOpenChange }: SignOutDialogProps) {
-  if (PUBLISHABLE_KEY) return <ClerkSignOutDialog open={open} onOpenChange={onOpenChange} />
+  if (hasClerk) return <ClerkSignOutDialog open={open} onOpenChange={onOpenChange} />
+  if (hasSupabase) return <SupabaseSignOutDialog open={open} onOpenChange={onOpenChange} />
 
   return <MockSignOutDialog open={open} onOpenChange={onOpenChange} />
 }
@@ -33,9 +33,8 @@ function ClerkSignOutDialog({ open, onOpenChange }: SignOutDialogProps) {
   )
 }
 
-function MockSignOutDialog({ open, onOpenChange }: SignOutDialogProps) {
-  const navigate = useNavigate()
-  const { auth } = useAuthStore()
+function SupabaseSignOutDialog({ open, onOpenChange }: SignOutDialogProps) {
+  const { logout } = useAuth()
 
   return (
     <ConfirmDialog
@@ -45,10 +44,25 @@ function MockSignOutDialog({ open, onOpenChange }: SignOutDialogProps) {
       desc='Are you sure you want to sign out? You will need to sign in again to access your account.'
       confirmText='Sign out'
       destructive
-      handleConfirm={() => {
-        auth.reset()
-        navigate({ to: '/sign-in', replace: true })
-      }}
+      handleConfirm={() => logout()}
+      className='sm:max-w-sm'
+    />
+  )
+}
+
+function MockSignOutDialog({ open, onOpenChange }: SignOutDialogProps) {
+  const { auth } = useAuthStore()
+  const { logout } = useAuth()
+
+  return (
+    <ConfirmDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title='Sign out'
+      desc='Are you sure you want to sign out? You will need to sign in again to access your account.'
+      confirmText='Sign out'
+      destructive
+      handleConfirm={() => logout()}
       className='sm:max-w-sm'
     />
   )

@@ -11,6 +11,7 @@ import { Toaster } from '@/components/ui/sonner'
 import { NavigationProgress } from '@/components/navigation-progress'
 import { GeneralError } from '@/features/errors/general-error'
 import { NotFoundError } from '@/features/errors/not-found-error'
+import { AuthProvider } from '@/hooks/use-auth'
 import { routeMetadata } from '@/lib/router'
 import { isDev } from '@/lib/env'
 
@@ -44,7 +45,9 @@ function RootLayout() {
   return (
     <>
       <NavigationProgress />
-      <Outlet />
+      <AuthProvider>
+        <Outlet />
+      </AuthProvider>
       <Toaster duration={5000} />
       {isDev && (
         <>

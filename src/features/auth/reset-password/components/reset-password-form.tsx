@@ -3,8 +3,7 @@ import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate } from '@tanstack/react-router'
-import { Loader2, UserPlus, Eye, EyeOff } from 'lucide-react'
-import { IconFacebook, IconGithub } from '@/assets/brand-icons'
+import { Loader2, Eye, EyeOff, CheckCircle2 } from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -17,61 +16,68 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { toast } from 'sonner'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 const formSchema = z
   .object({
-    fullName: z
-      .string()
-      .min(1, 'Please enter your full name.')
-      .min(2, 'Full name must be at least 2 characters.'),
-    clinicName: z
-      .string()
-      .min(1, 'Please enter your clinic name.')
-      .min(2, 'Clinic name must be at least 2 characters.'),
-    email: z.email({
-      error: (iss) =>
-        iss.input === '' ? 'Please enter your email.' : undefined,
-    }),
     password: z
       .string()
-      .min(1, 'Please enter your password.')
+      .min(1, 'Please enter your new password.')
       .min(7, 'Password must be at least 7 characters long.'),
-    confirmPassword: z.string().min(1, 'Please confirm your password.'),
+    confirmPassword: z.string().min(1, 'Please confirm your new password.'),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match.",
     path: ['confirmPassword'],
   })
 
-export function SignUpForm({
+export function ResetPasswordForm({
   className,
   ...props
 }: React.HTMLAttributes<HTMLFormElement>) {
   const navigate = useNavigate()
-  const { register, isLoading } = useAuth()
+  const { resetPassword, isLoading } = useAuth()
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [isPasswordReset, setIsPasswordReset] = useState(false)
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      fullName: '',
-      clinicName: '',
-      email: '',
       password: '',
       confirmPassword: '',
     },
   })
 
   async function onSubmit(data: z.infer<typeof formSchema>) {
-    const result = await register(data.email, data.password, {
-      fullName: data.fullName,
-      clinicName: data.clinicName,
-    })
+    const result = await resetPassword(data.password)
     if (!result.error) {
-      navigate({ to: '/sign-in', replace: true })
+      setIsPasswordReset(true)
     }
+  }
+
+  if (isPasswordReset) {
+    return (
+      <Card className={cn('w-full', className)}>
+        <CardHeader className='text-center'>
+          <div className='mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30'>
+            <CheckCircle2 className='size-6 text-green-600 dark:text-green-400' />
+          </div>
+          <CardTitle className='text-xl'>Password Reset Successful</CardTitle>
+        </CardHeader>
+        <CardContent className='text-center'>
+          <p className='mb-6 text-sm text-muted-foreground'>
+            Your password has been reset successfully. You can now sign in with your new password.
+          </p>
+          <Button
+            type='button'
+            onClick={() => navigate({ to: '/sign-in' })}
+          >
+            Go to Sign In
+          </Button>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (
@@ -81,56 +87,12 @@ export function SignUpForm({
         className={cn('grid gap-3', className)}
         {...props}
       >
-        <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
-          <FormField
-            control={form.control}
-            name='fullName'
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Full Name</FormLabel>
-                <FormControl>
-                  <Input placeholder='John Doe' {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name='clinicName'
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Clinic / Hospital Name</FormLabel>
-                <FormControl>
-                  <Input placeholder='City Medical Center' {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <FormField
-          control={form.control}
-          name='email'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input placeholder='name@example.com' type='email' {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
         <FormField
           control={form.control}
           name='password'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Password</FormLabel>
+              <FormLabel>New Password</FormLabel>
               <FormControl>
                 <div className='relative'>
                   <Input
@@ -161,7 +123,7 @@ export function SignUpForm({
           name='confirmPassword'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Confirm Password</FormLabel>
+              <FormLabel>Confirm New Password</FormLabel>
               <FormControl>
                 <div className='relative'>
                   <Input
@@ -188,39 +150,14 @@ export function SignUpForm({
         />
 
         <Button className='mt-2' disabled={isLoading} type='submit'>
-          {isLoading ? <Loader2 className='animate-spin' /> : <UserPlus />}
-          Create Account
+          {isLoading ? (
+            <>
+              <Loader2 className='animate-spin' /> Resetting...
+            </>
+          ) : (
+            'Reset Password'
+          )}
         </Button>
-
-        <div className='relative my-2'>
-          <div className='absolute inset-0 flex items-center'>
-            <span className='w-full border-t' />
-          </div>
-          <div className='relative flex justify-center text-xs uppercase'>
-            <span className='bg-background px-2 text-muted-foreground'>
-              Or continue with
-            </span>
-          </div>
-        </div>
-
-        <div className='grid grid-cols-2 gap-2'>
-          <Button
-            variant='outline'
-            className='w-full'
-            type='button'
-            disabled={isLoading}
-          >
-            <IconGithub className='h-4 w-4' /> GitHub
-          </Button>
-          <Button
-            variant='outline'
-            className='w-full'
-            type='button'
-            disabled={isLoading}
-          >
-            <IconFacebook className='h-4 w-4' /> Facebook
-          </Button>
-        </div>
       </form>
     </Form>
   )

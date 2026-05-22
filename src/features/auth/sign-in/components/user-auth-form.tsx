@@ -2,12 +2,11 @@ import { useState } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Link, useNavigate } from '@tanstack/react-router'
-import { Loader2, LogIn } from 'lucide-react'
-import { toast } from 'sonner'
+import { Link, useNavigate, useSearch } from '@tanstack/react-router'
+import { Loader2, LogIn, Eye, EyeOff } from 'lucide-react'
 import { IconFacebook, IconGithub } from '@/assets/brand-icons'
-import { useAuthStore } from '@/stores/auth-store'
-import { sleep, cn } from '@/lib/utils'
+import { useAuth } from '@/hooks/use-auth'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -18,7 +17,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { PasswordInput } from '@/components/password-input'
+import { Checkbox } from '@/components/ui/checkbox'
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email.' }),
@@ -26,56 +25,37 @@ const formSchema = z.object({
     .string()
     .min(1, 'Please enter your password.')
     .min(7, 'Password must be at least 7 characters long.'),
+  rememberMe: z.boolean().optional(),
 })
 
 interface UserAuthFormProps extends React.HTMLAttributes<HTMLFormElement> {
   redirectTo?: string
 }
 
-const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY
-
 export function UserAuthForm({
   className,
-  redirectTo,
   ...props
 }: UserAuthFormProps) {
-  const [isLoading, setIsLoading] = useState(false)
+  const search = useSearch({ strict: false })
+  const redirectTo = (search as { redirect?: string })?.redirect || '/'
   const navigate = useNavigate()
-  const { auth } = useAuthStore()
+  const { login, isLoading } = useAuth()
+  const [showPassword, setShowPassword] = useState(false)
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: '',
       password: '',
+      rememberMe: false,
     },
   })
 
-  function onSubmit(data: z.infer<typeof formSchema>) {
-    setIsLoading(true)
-
-    toast.promise(sleep(2000), {
-      loading: 'Signing in...',
-      success: () => {
-        setIsLoading(false)
-
-        const mockUser = {
-          accountNo: 'ACC001',
-          email: data.email,
-          role: ['user'],
-          exp: Date.now() + 24 * 60 * 60 * 1000,
-        }
-
-        auth.setUser(mockUser)
-        auth.setAccessToken('mock-access-token')
-
-        const targetPath = redirectTo || '/'
-        navigate({ to: targetPath, replace: true })
-
-        return `Welcome back, ${data.email}!`
-      },
-      error: 'Error',
-    })
+  async function onSubmit(data: z.infer<typeof formSchema>) {
+    const result = await login(data.email, data.password)
+    if (!result.error) {
+      navigate({ to: redirectTo, replace: true })
+    }
   }
 
   return (
@@ -92,12 +72,13 @@ export function UserAuthForm({
             <FormItem>
               <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input placeholder='name@example.com' {...field} />
+                <Input placeholder='name@example.com' type='email' {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
+
         <FormField
           control={form.control}
           name='password'
@@ -105,7 +86,24 @@ export function UserAuthForm({
             <FormItem className='relative'>
               <FormLabel>Password</FormLabel>
               <FormControl>
-                <PasswordInput placeholder='********' {...field} />
+                <div className='relative'>
+                  <Input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder='********'
+                    {...field}
+                  />
+                  <button
+                    type='button'
+                    className='absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground'
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className='size-4' />
+                    ) : (
+                      <Eye className='size-4' />
+                    )}
+                  </button>
+                </div>
               </FormControl>
               <FormMessage />
               <Link
@@ -117,7 +115,26 @@ export function UserAuthForm({
             </FormItem>
           )}
         />
-        <Button className='mt-2' disabled={isLoading}>
+
+        <FormField
+          control={form.control}
+          name='rememberMe'
+          render={({ field }) => (
+            <FormItem className='flex flex-row items-start space-x-3 space-y-0'>
+              <FormControl>
+                <Checkbox
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <div className='space-y-1 leading-none'>
+                <FormLabel className='text-sm'>Remember me</FormLabel>
+              </div>
+            </FormItem>
+          )}
+        />
+
+        <Button className='mt-2' disabled={isLoading} type='submit'>
           {isLoading ? <Loader2 className='animate-spin' /> : <LogIn />}
           Sign in
         </Button>
